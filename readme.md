@@ -3,3 +3,4 @@ Storage area for test related tools and stuff which can come in handy at some po
 
 ## Content
 * [isniffer](isniffer/readme.md) - eth interface sniffer
+* [pyser](pyser/readme.md) - serial device sender
