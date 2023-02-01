@@ -9,3 +9,4 @@ Storage area for test related tools and stuff which can come in handy at some po
 * [errno_conv](errno_conv) - Get standard errno description
 * [adb_hlpr](adb_hlpr) - Android Debug Bridge command wrapper
 * [ntmsk_support_table](ntmsk_support_table) - Netmask support table
+* [apple_heic_conv](apple_heic_conv) - Convert Apple .HEIC files to .jpg
