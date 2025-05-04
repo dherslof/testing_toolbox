@@ -11,3 +11,4 @@ Storage area for test related tools and stuff which can come in handy at some po
 * [ntmsk_support_table](ntmsk_support_table) - Netmask support table
 * [apple_heic_conv](apple_heic_conv) - Convert Apple .HEIC files to .jpg
 * [iptables_log_hlpr](iptables_log_hlpr) - Filter and sort iptables logs from kernel logs
+* [apipa_scanner](apipa_scanner) - Search IP addresses assigned by Automatic Private IP Addressing
