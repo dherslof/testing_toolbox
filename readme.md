@@ -12,3 +12,4 @@ Storage area for test related tools and stuff which can come in handy at some po
 * [apple_heic_conv](apple_heic_conv) - Convert Apple .HEIC files to .jpg
 * [iptables_log_hlpr](iptables_log_hlpr) - Filter and sort iptables logs from kernel logs
 * [apipa_scanner](apipa_scanner) - Search IP addresses assigned by Automatic Private IP Addressing
+* [frequency_time_conv](frequency_time_conv) - Convert Hz to ms and vice versa
