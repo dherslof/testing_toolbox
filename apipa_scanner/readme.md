@@ -1,7 +1,7 @@
 # APIPA Scanner
 Since I had the need to obtain IP addresses of some devices which was assigned using
 `APIPA`, I wrote this tool. It's in two versions, one simple terminal script and one with
-a **GUI** based on (customtkinter)[https://customtkinter.tomschimansky.com].
+a **GUI** based on [customtkinter](https://customtkinter.tomschimansky.com).
 
 They both work the same, and I use the script more then the GUI, but since I recently came in contact
 with `customtkinter` I wanted to check it out.
