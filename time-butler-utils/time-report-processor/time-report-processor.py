@@ -34,10 +34,10 @@ class TimeReportProcessor:
    """Handles processing and appending time reports to Excel files."""
    EXPECTED_COLUMNS = {
       'weekly': [
-         'Week', 'Date', 'StartingTime', 'EndingTime', 'Hours', 'Description', 'Closed'
+          'Week', 'Date', 'StartingTime', 'EndingTime', 'Paused-Hours', 'Hours', 'Description', 'Closed'
       ],
       'monthly': [
-         'Month', 'Week', 'Date', 'StartingTime', 'EndingTime', 'Hours', 'Description', 'Closed'
+          'Month', 'Week', 'Date', 'StartingTime', 'EndingTime', 'Paused-Hours', 'Hours', 'Description', 'Closed'
       ],
       'project': [
          'hours', 'description', 'created', 'id'
@@ -49,6 +49,16 @@ class TimeReportProcessor:
       self.excel_file_path = Path(excel_file_path or 'time_reports.xlsx')
       if not self.csv_file_path.exists():
          raise FileNotFoundError(f"CSV file not found: {self.csv_file_path}")
+
+   def format_hours_with_minutes(self, hours_value):
+      """Format a float-hour value as whole hours plus remaining minutes."""
+      if pd.isna(hours_value):
+         return "N/A"
+
+      total_minutes = int(round(float(hours_value) * 60.0))
+      hours_only = total_minutes // 60
+      minutes_only = total_minutes % 60
+      return f"{hours_only:.1f} ({minutes_only} minutes)"
 
    def extract_project_name(self, filename):
       name = Path(filename).stem
@@ -72,8 +82,8 @@ class TimeReportProcessor:
          return 'weekly', None
       raise ValueError(
          f"Cannot determine report type. Expected columns for:\n"
-         f"- Weekly: Week, Date, StartingTime, EndingTime, Hours, Description, Closed\n"
-         f"- Monthly: Month, Week, Date, StartingTime, EndingTime, Hours, Description, Closed\n"
+         f"- Weekly: Week, Date, StartingTime, EndingTime, Paused-Hours, Hours, Description, Closed\n"
+         f"- Monthly: Month, Week, Date, StartingTime, EndingTime, Paused-Hours, Hours, Description, Closed\n"
          f"- Project: hours, description, created, id\n"
          f"Found columns: {df.columns.tolist()}"
       )
@@ -124,6 +134,7 @@ class TimeReportProcessor:
          if 'hours' in df_processed.columns:
             try:
                df_processed['hours'] = pd.to_numeric(df_processed['hours'], errors='coerce')
+               df_processed['minutes'] = (df_processed['hours'] * 60.0).round().astype('Int64')
                logging.info("Successfully converted hours column to numeric")
             except Exception as e:
                logging.warning(f"Could not convert hours column to numeric: {e}")
@@ -154,9 +165,17 @@ class TimeReportProcessor:
          if 'Hours' in df_processed.columns:
             try:
                df_processed['Hours'] = pd.to_numeric(df_processed['Hours'], errors='coerce')
+               df_processed['Minutes'] = (df_processed['Hours'] * 60.0).round().astype('Int64')
                logging.info("Successfully converted Hours column to numeric")
             except Exception as e:
                logging.warning(f"Could not convert Hours column to numeric: {e}")
+         if 'Paused-Hours' in df_processed.columns:
+            try:
+               df_processed['Paused-Hours'] = pd.to_numeric(df_processed['Paused-Hours'], errors='coerce')
+               df_processed['Paused-Minutes'] = (df_processed['Paused-Hours'] * 60.0).round().astype('Int64')
+               logging.info("Successfully converted Paused-Hours column to numeric")
+            except Exception as e:
+               logging.warning(f"Could not convert Paused-Hours column to numeric: {e}")
          for col in ['Week', 'Month']:
             if col in df_processed.columns:
                try:
@@ -415,7 +434,11 @@ class TimeReportProcessor:
 
          if new_summary.get('total_hours'):
             print(f"   • Hours added: {new_summary['total_hours']:.2f}")
-            print(f"   • Avg hours/entry: {new_summary['avg_hours_per_entry']:.2f}")
+            print(f"   • Avg hours/entry: {self.format_hours_with_minutes(new_summary['avg_hours_per_entry'])}")
+         if new_summary.get('total_paused_hours') is not None and pd.notna(new_summary.get('total_paused_hours')):
+            print(f"   • Paused hours total: {new_summary['total_paused_hours']:.2f}")
+            if pd.notna(new_summary.get('avg_paused_hours_per_entry')):
+               print(f"   • Avg paused/entry: {self.format_hours_with_minutes(new_summary['avg_paused_hours_per_entry'])}")
 
          if new_summary.get('date_range'):
             print(f"   • Date range: {new_summary['date_range']['start']} to {new_summary['date_range']['end']}")
@@ -431,6 +454,8 @@ class TimeReportProcessor:
 
          if total_summary.get('total_hours'):
             print(f"   • Total hours: {total_summary['total_hours']:.2f}")
+         if total_summary.get('total_paused_hours') is not None and pd.notna(total_summary.get('total_paused_hours')):
+            print(f"   • Total paused hours: {total_summary['total_paused_hours']:.2f}")
 
          print(f"\n📋 All Sheets:")
          for sheet_name, df in excel_data.items():
@@ -462,8 +487,15 @@ class TimeReportProcessor:
       if hours_col in data.columns:
          summary['total_hours'] = data[hours_col].sum()
          summary['avg_hours_per_entry'] = data[hours_col].mean()
+         if pd.notna(summary['avg_hours_per_entry']):
+            total_avg_minutes = int(round(float(summary['avg_hours_per_entry']) * 60.0))
+            summary['avg_minutes_per_entry'] = total_avg_minutes % 60
+            summary['avg_hours_display'] = f"{total_avg_minutes // 60:.1f}"
          summary['max_hours_entry'] = data[hours_col].max()
          summary['min_hours_entry'] = data[hours_col].min()
+      if 'Paused-Hours' in data.columns:
+         summary['total_paused_hours'] = data['Paused-Hours'].sum()
+         summary['avg_paused_hours_per_entry'] = data['Paused-Hours'].mean()
       date_col = 'created' if report_type == 'project' else 'Date'
       if date_col in data.columns:
          try:
@@ -562,7 +594,11 @@ class TimeReportProcessor:
 
          if new_summary.get('total_hours'):
             print(f"   • Hours added: {new_summary['total_hours']:.2f}")
-            print(f"   • Avg hours/entry: {new_summary['avg_hours_per_entry']:.2f}")
+            print(f"   • Avg hours/entry: {self.format_hours_with_minutes(new_summary['avg_hours_per_entry'])}")
+            if new_summary.get('total_paused_hours') is not None and pd.notna(new_summary.get('total_paused_hours')):
+               print(f"   • Paused hours total: {new_summary['total_paused_hours']:.2f}")
+               if pd.notna(new_summary.get('avg_paused_hours_per_entry')):
+                  print(f"   • Avg paused/entry: {self.format_hours_with_minutes(new_summary['avg_paused_hours_per_entry'])}")
 
          if new_summary.get('date_range'):
             print(f"   • Date range: {new_summary['date_range']['start']} to {new_summary['date_range']['end']}")
@@ -577,6 +613,8 @@ class TimeReportProcessor:
          print(f"   • Records: {len(excel_data[target_sheet])}")
          if total_summary.get('total_hours'):
             print(f"   • Total hours: {total_summary['total_hours']:.2f}")
+            if total_summary.get('total_paused_hours') is not None and pd.notna(total_summary.get('total_paused_hours')):
+               print(f"   • Total paused hours: {total_summary['total_paused_hours']:.2f}")
          print(f"\n📋 All Sheets:")
          for sheet_name, df in excel_data.items():
             if not df.empty:
