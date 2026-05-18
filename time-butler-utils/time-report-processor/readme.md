@@ -21,15 +21,15 @@ A Python script to append weekly, monthly, or project time reports from CSV file
 ## Usage
 
 ```sh
-python time_report_processor.py <csv_file_path> [excel_file_path]
+python time-report-processor.py <csv_file_path> [excel_file_path]
 ```
 
 ### Examples
 
 ```sh
-python time_report_processor.py weekly_report.csv
-python time_report_processor.py monthly_report.csv
-python time_report_processor.py project_report42.csv project_reports.xlsx
+python time-report-processor.py weekly_report.csv
+python time-report-processor.py monthly_report.csv
+python time-report-processor.py project_report42.csv project_reports.xlsx
 ```
 
 - If `excel_file_path` is omitted, the default is `time_reports_archive.xlsx`.
